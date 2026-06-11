@@ -1,96 +1,125 @@
 @import "tailwindcss";
 
-@theme {
-  /* Colour palette */
-  --color-forest: #1a3a2f;
-  --color-forest-deep: #0f2218;
-  --color-moss: #2d5a45;
-  --color-sage: #8baf95;
-  --color-sage-light: #c4d9ca;
-  --color-cream: #f5f0e8;
-  --color-parchment: #ede6d6;
-  --color-ink: #1a1a18;
-  --color-dust: #6b6b67;
-  --color-dust-light: #9e9e99;
-  --color-gold: #c9a84c;
-  --color-gold-light: #e8d08a;
-  --color-white-warm: #fafaf8;
+/* ─── Design tokens ──────────────────────────────────────────── */
+:root {
+  /* Committed indigo strategy — seed oklch(0.450 0.180 270) */
+  --bg:             oklch(1 0 0);
+  --surface:        oklch(0.975 0.004 270);
+  --surface-2:      oklch(0.945 0.007 270);
+  --rule:           oklch(0.88 0.008 275);
+
+  --ink:            oklch(0.14 0.035 275);
+  --ink-2:          oklch(0.32 0.025 275);
+  --muted:          oklch(0.52 0.018 275);
+
+  --primary:        oklch(0.45 0.18 270);
+  --primary-deep:   oklch(0.26 0.13 272);
+  --primary-mid:    oklch(0.58 0.14 268);
+  --primary-pale:   oklch(0.93 0.038 270);
+
+  --accent:         oklch(0.76 0.155 78);
+  --accent-deep:    oklch(0.60 0.165 78);
+
+  --on-dark:        oklch(0.97 0.005 275);
+  --on-dark-2:      oklch(0.82 0.04 270);
+  --on-dark-muted:  oklch(0.62 0.05 270);
 
   /* Typography */
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-serif: "Cormorant Garamond", Georgia, serif;
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-display:   'Spectral', Georgia, serif;
+  --font-body:      'Figtree', system-ui, -apple-system, sans-serif;
 
-  /* Spacing */
-  --spacing-section: 7rem;
-  --spacing-section-sm: 4rem;
+  /* Z-index scale */
+  --z-sticky:       200;
+  --z-modal:        400;
+  --z-toast:        500;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ─── Base ───────────────────────────────────────────────────── */
+/*
+ * All base rules go inside @layer base so they sit BELOW
+ * @layer utilities in the cascade — Tailwind spacing utilities
+ * (py-28, px-5, gap-12 …) then correctly override the reset.
+ */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  img { max-width: 100%; display: block; }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  p { max-width: 65ch; }
 }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-cream);
-  color: var(--color-ink);
-  line-height: 1.7;
-  font-size: 17px;
-}
-
-/* Noise texture overlay utility */
-.noise::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 200px 200px;
-  pointer-events: none;
-  opacity: 0.4;
-}
-
-/* Marquee animation */
+/* ─── Marquee ────────────────────────────────────────────────── */
 @keyframes marquee {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track { animation: marquee 32s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
 }
 
-.animate-marquee {
-  animation: marquee 28s linear infinite;
+/* ─── Scroll-fade reveal ─────────────────────────────────────── */
+/*
+ * Content is VISIBLE by default (no opacity gate).
+ * JS enhances with the animation after IntersectionObserver fires.
+ * This ensures headless renderers + disabled JS never blank sections.
+ */
+.js-ready .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Direct reveal on the element itself */
+.js-ready .reveal.revealed,
+/* Indirect: parent container revealed → children animate in */
+.js-ready .revealed .reveal {
+  opacity: 1;
+  transform: none;
 }
 
-/* Fade in up animation */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
+@media (prefers-reduced-motion: reduce) {
+  .js-ready .reveal,
+  .js-ready .reveal.revealed,
+  .js-ready .revealed .reveal {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
+    transition: none;
   }
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.6s ease-out forwards;
+/* ─── Focus ring ─────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
 }
 
-/* Pulse ring animation for CTA */
-@keyframes pulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.4); }
-  70% { box-shadow: 0 0 0 12px rgba(201, 168, 76, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0); }
-}
-
-.animate-pulse-ring {
-  animation: pulseRing 2.5s ease-out infinite;
+/* ─── Selection ──────────────────────────────────────────────── */
+::selection {
+  background: var(--primary-pale);
+  color: var(--primary-deep);
 }
